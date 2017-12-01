@@ -25,7 +25,6 @@ RUN git clone $PLIBS_8_CLONE_URL /opt/PLIBS_8 \
 RUN cd /opt/PLIBS_8 \
  && mkdir build \
  && cd build \
- && cmake .. -DRELEASE_MODE=yes
- \
+ && cmake .. -DRELEASE_MODE=yes \
  && make -j`grep -c '^processor' /proc/cpuinfo` all install \
  && ldconfig
