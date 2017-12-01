@@ -1,55 +1,30 @@
-FROM ctalapp/ctapipe:latest
-MAINTAINER CTA LAPP <cta-pipeline-lapp@in2p3.fr>
+FROM fedora:latest
+MAINTAINER Jean Jacquemier LAPP <jacquem@lapp.in2p3.fr>
 
-ARG CTA_ANALYSIS_CLONE_URL=https://gitlab.in2p3.fr/CTA-LAPP/CTA_Analysis.git
-ARG CTA_ANALYSIS_VERSION=master
-ARG SWIG_VERSION=3.0.12
-ARG GOOGLE_BENCHMARK_VERSION=v1.1.0
+ARG PLIBS_8_CLONE_URL=https://gitlab.in2p3.fr/CTA-LAPP/PLIBS_8.git
 
-ADD eigen3.werror.diff /tmp/
+ARG PLIBS_8_VERSION=master
 
-# Install CTA_Analysis dependencies
-RUN source activate ${CONDA_ENV} \
- && mkdir -p /root/.config/matplotlib \
- && echo "backend : Agg" > /root/.config/matplotlib/matplotlibrc \
- && conda install -n ${CONDA_ENV} -c menpo eigen \
- && cd /opt/conda/envs/${CONDA_ENV}/include && patch -p0 </tmp/eigen3.werror.diff \
- && cd /tmp \
- && curl -O -J -L https://downloads.sourceforge.net/project/swig/swig/swig-${SWIG_VERSION}/swig-${SWIG_VERSION}.tar.gz \
- && tar zxf swig-${SWIG_VERSION}.tar.gz \
- && cd swig-${SWIG_VERSION} \
- && source activate ${CONDA_ENV} \
- && ./configure \
- && make -j`grep -c '^processor' /proc/cpuinfo` \
- && make install \
- && rm -rf /tmp swig-${SWIG_VERSION}.tar.gz swig-${SWIG_VERSION} \
- && cd /opt \
- && git clone https://github.com/google/benchmark.git /opt/benchmark \
- && cd /opt/benchmark \
- && git checkout ${GOOGLE_BENCHMARK_VERSION} \
+# Install PLIBS_8 dependencies
+RUN echo "install depedencies" \
+ && dnf install gcc -y \
+ && dnf install gcc-c++ -y \
+ && dnf install git -y \
+ && dnf install cmake -y \
+ && dnf install doxygen -y \
+ && dnf install graphviz -y
+
+
+
+# Clone PLIBS_* GIT repository
+RUN git clone $PLIBS_8_CLONE_URL /opt/PLIBS_8 \
+ && cd /opt/PLIBS_8 \
+ && git checkout $PLIBS_8_VERSION
+
+# Build and install PLIBS_8
+RUN cd /opt/PLIBS_8 \
  && mkdir build \
  && cd build \
- && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. \
- && make all install \
- && rm -rf /opt/benchmark \
- && cd /opt \
- && pip install cython matplotlib==1.5.2
-
-# Clone CTA_Analysis GIT repository
-RUN source activate ${CONDA_ENV} \
- && conda install pytest \
- && git clone $CTA_ANALYSIS_CLONE_URL /opt/CTA_Analysis \
- && cd /opt/CTA_Analysis \
- && git checkout $CTA_ANALYSIS_VERSION
-
-# Build and install CTA_Analysis
-RUN source activate ${CONDA_ENV} \
- && cd /opt/CTA_Analysis \
- && mkdir build \
- && cd build \
- && cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DRELEASE_MODE=no -DUSE_PYTHON=yes -DEIGEN_INCLUDE_DIR=/opt/conda/envs/${CONDA_ENV}/include -DPYTHON_INCLUDE_DIR=/opt/conda/envs/${CONDA_ENV}/include/python3.5m -DPYTHON_LIBRARY=/opt/conda/envs/${CONDA_ENV}/lib/libpython3.5m.so \
+ && cmake .. -DCMAKE_INSTALL
  && make -j`grep -c '^processor' /proc/cpuinfo` all install \
  && ldconfig
-
-RUN mkdir /tmp ; chmod 777 /tmp ; chmod +t /tmp
-ENV PYTHON_EGG_CACHE=/tmp/.cache
