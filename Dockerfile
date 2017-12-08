@@ -1,4 +1,4 @@
-FROM fedora:latest
+FROM ctalapp/ctapipe:latest
 MAINTAINER Jean Jacquemier LAPP <jacquem@lapp.in2p3.fr>
 
 ARG PLIBS_8_CLONE_URL=https://gitlab.in2p3.fr/CTA-LAPP/PLIBS_8.git
@@ -17,12 +17,14 @@ RUN echo "install depedencies" \
 
 
 # Clone PLIBS_* GIT repository
-RUN git clone $PLIBS_8_CLONE_URL /opt/PLIBS_8 \
+RUN source activate ${CONDA_ENV} \
+ && git clone $PLIBS_8_CLONE_URL /opt/PLIBS_8 \
  && cd /opt/PLIBS_8 \
  && git checkout $PLIBS_8_VERSION
 
 # Build and install PLIBS_8
-RUN cd /opt/PLIBS_8 \
+RUN source activate ${CONDA_ENV} \
+ && cd /opt/PLIBS_8 \
  && mkdir build \
  && cd build \
  && cmake .. -DRELEASE_MODE=yes \
