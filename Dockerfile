@@ -39,4 +39,5 @@ RUN echo "install depedencies" \
 RUN source activate ${CONDA_ENV} \
  && git clone $PLIBS_8_CLONE_URL /opt/PLIBS_8 \
  && cd /opt/PLIBS_8 \
- && git checkout $PLIBS_8_VERSION
+ && git checkout $PLIBS_8_VERSION \
+ && mkdir build
